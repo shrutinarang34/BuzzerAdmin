@@ -1,51 +1,46 @@
 from flask import Flask, render_template, request, redirect, url_for
 import requests
+import services
+from flask_login import LoginManager , UserMixin, login_required,login_user
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key' 
+login_manager = LoginManager(app)
 
+# Simple User class for Flask-Login
+class User(UserMixin):
+    def __init__(self, user_id,token):
+        self.id = user_id
+        self.token = token
+
+# User loader callback function
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
 
 # LOGIN SECTION - START
 @app.route("/")
 def index():
     return render_template("pages/samples/login.html")
 
-@app.route("/login/handler/", methods=["POST"])
+api_url = "https://bapi.beeclue.com/businesses/users/signin"
+
+@app.route("/loginHandler", methods=["POST"])
 def loginHandler(): 
-        # Set the URL for the login API
-    url = "https://bapi.beeclue.com/businesses/users/signin"
+    username = request.form.get('username')
+    password = request.form.get('password')
 
-    # Define the payload (username and password)
-    payload = {
-        "username": "username",
-        "password": "password"
-    }
 
-    # Make a POST request to the login API
-    response = requests.post(url, json=payload)
 
-    # Check if the request was successful (status code 200)
-    if response.status_code == 200:
-        # Parse the response data (assuming it's in JSON format)
-        data = response.json()
 
-        # Extract the token from the response
-        token = data.get("token")
 
-        # Store the token in cookies or session for future requests
-        # You can use a library like `requests.Session` for persistent sessions
-        # For simplicity, we'll just print the token in this example
-        print("Login successful. Token:", token)
 
-        # You can now use this token for subsequent API requests in the session
-    else:
-        # If the login request was unsuccessful, print the error message
-        print("Login failed. Error:", response.text)
-    
 
 # LOGIN SECTION - END
 
 
-@app.route('/dashboard/')
+@app.route('/dashboard')
+@login_required
 def dashboard():
     return render_template('dashboard.html')
 
